@@ -1,0 +1,8 @@
+/easycrud-core/*.iml
+/.idea
+/easycrud-core/target
+/easycrud-processor/target
+/easycrud-test/target
+/easycrud-processor/*.iml
+/easycrud-test/*.iml
+/*.iml
