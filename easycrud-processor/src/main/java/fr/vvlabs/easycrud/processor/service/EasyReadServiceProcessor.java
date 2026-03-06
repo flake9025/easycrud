@@ -1,33 +1,30 @@
 package fr.vvlabs.easycrud.processor.service;
 
 import com.google.auto.service.AutoService;
-import com.squareup.javapoet.ClassName;
-import com.squareup.javapoet.FieldSpec;
-import com.squareup.javapoet.JavaFile;
-import com.squareup.javapoet.MethodSpec;
-import com.squareup.javapoet.ParameterizedTypeName;
+import com.squareup.javapoet.*;
 import com.squareup.javapoet.TypeSpec.Builder;
 import fr.vvlabs.easycrud.core.mapper.TargetMapper;
 import fr.vvlabs.easycrud.core.repository.BaseRepository;
 import fr.vvlabs.easycrud.core.service.BaseReadService;
 import fr.vvlabs.easycrud.core.service.EasyReadService;
 import fr.vvlabs.easycrud.processor.utils.AbstractEasyCrudProcessor;
-import java.io.IOException;
-import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.annotation.processing.Processor;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.validation.annotation.Validated;
+import javax.tools.Diagnostic;
+import java.io.IOException;
+import java.util.Optional;
 
 @SupportedAnnotationTypes(value = {"fr.vvlabs.easycrud.core.service.EasyReadService"})
-@SupportedSourceVersion(SourceVersion.RELEASE_11)
-@AutoService(EasyReadServiceProcessor.class)
+@SupportedSourceVersion(SourceVersion.RELEASE_21)
+@AutoService(Processor.class)
 public class EasyReadServiceProcessor extends AbstractEasyCrudProcessor<EasyReadService> {
 
   @Override
@@ -44,7 +41,7 @@ public class EasyReadServiceProcessor extends AbstractEasyCrudProcessor<EasyRead
     );
     // add "@Autowired protected BaseRepository<entity,id> baseRepository"
     FieldSpec baseRepositoryField = FieldSpec.builder(baseRepositoryType, "baseRepository", Modifier.PROTECTED)
-        .addAnnotation(Autowired.class)
+        .addAnnotation(ClassName.get("org.springframework.beans.factory.annotation", "Autowired"))
         .build();
     // add "@Override public BaseRepository<entity,id> getBaseRepository()"
     MethodSpec baseRepositoryGetter = MethodSpec.methodBuilder("getBaseRepository")
@@ -67,7 +64,7 @@ public class EasyReadServiceProcessor extends AbstractEasyCrudProcessor<EasyRead
     );
     // add "@Autowired protected Optional<TargetMapper<entity, user>> modelToDtoMapper"
     FieldSpec optionalTargetMapperField = FieldSpec.builder(optionalTargetMapperType, "modelToDtoMapper", Modifier.PROTECTED)
-        .addAnnotation(Autowired.class)
+        .addAnnotation(ClassName.get("org.springframework.beans.factory.annotation", "Autowired"))
         .build();
     // add "@Override public Optional<TargetMapper<entity, user>> getModelToDtoMapper()"
     MethodSpec optionalTargetMapperGetter = MethodSpec.methodBuilder("getModelToDtoMapper")
@@ -84,13 +81,17 @@ public class EasyReadServiceProcessor extends AbstractEasyCrudProcessor<EasyRead
         ClassName.get(id),
         ClassName.get(user)
     );
+    ClassName implClassName = ClassName.get(getPackagePath(element), element.getSimpleName() + "Impl");
+    FieldSpec loggerField = FieldSpec.builder(ClassName.get(Logger.class), "log", Modifier.PRIVATE, Modifier.STATIC, Modifier.FINAL)
+        .initializer("$T.getLogger($T.class)", ClassName.get(LoggerFactory.class), implClassName)
+        .build();
 
     // Generate "xxxImpl implements BaseReadService<entity,dto,id,user>
     Builder controllerClassBuilder = implClassBuilder(element)
         .addSuperinterface(serviceType)
-        .addAnnotation(Service.class)
-        .addAnnotation(Validated.class)
-        .addAnnotation(Slf4j.class)
+        .addAnnotation(ClassName.get("org.springframework.stereotype", "Service"))
+        .addAnnotation(ClassName.get("org.springframework.validation.annotation", "Validated"))
+        .addField(loggerField)
         .addField(baseRepositoryField)
         .addMethod(baseRepositoryGetter)
         .addField(optionalTargetMapperField)
@@ -100,9 +101,12 @@ public class EasyReadServiceProcessor extends AbstractEasyCrudProcessor<EasyRead
     try {
       javaFile.writeTo(processingEnv.getFiler());
     } catch (IOException e) {
-      e.printStackTrace();
-      return true;
+      processingEnv.getMessager().printMessage(
+          Diagnostic.Kind.ERROR,
+          "Failed to write generated service for " + element.getSimpleName() + ": " + e.getMessage(),
+          element);
+      return false;
     }
-    return false;
+    return true;
   }
 }

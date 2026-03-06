@@ -1,12 +1,13 @@
 package fr.vvlabs.easycrud.core.security;
 
 import fr.vvlabs.easycrud.core.entity.BaseUser;
-import java.util.Optional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+
+import java.util.Optional;
 
 @Configuration
 @EnableWebSecurity

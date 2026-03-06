@@ -1,12 +1,13 @@
 package fr.vvlabs.easycrud.core.mapper;
 
 import fr.vvlabs.easycrud.core.entity.BaseUser;
+import fr.vvlabs.easycrud.core.entity.EasyEntity;
 import java.io.Serializable;
 import java.util.Optional;
 import org.mapstruct.MapperConfig;
 
 @MapperConfig(uses = JpaMapper.class)
-public interface BaseReadMapper<T, GETDTO, USER extends BaseUser> extends TargetMapper<T, USER> {
+public interface BaseReadMapper<T extends EasyEntity, GETDTO, USER extends BaseUser> extends TargetMapper<T, USER> {
 
   GETDTO toDto(T entity);
 

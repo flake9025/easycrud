@@ -2,14 +2,15 @@ package fr.vvlabs.easycrud.core.mapper;
 
 import fr.vvlabs.easycrud.core.entity.EasyEntity;
 import fr.vvlabs.easycrud.core.exception.ResourceNotFoundException;
-import java.io.Serializable;
-import java.util.Arrays;
-import java.util.Optional;
-import javax.persistence.EntityManager;
+import jakarta.persistence.EntityManager;
 import org.mapstruct.Mapper;
 import org.mapstruct.TargetType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.Assert;
+
+import java.io.Serializable;
+import java.util.Arrays;
+import java.util.Optional;
 
 @Mapper(componentModel = "spring")
 public class JpaMapper {

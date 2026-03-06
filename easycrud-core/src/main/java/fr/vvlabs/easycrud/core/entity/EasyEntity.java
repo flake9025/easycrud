@@ -1,5 +1,9 @@
 package fr.vvlabs.easycrud.core.entity;
 
-public @interface EasyEntity {
+import java.io.Serializable;
 
+/**
+ * Marker interface for domain entities managed by EasyCrud.
+ */
+public interface EasyEntity extends Serializable {
 }

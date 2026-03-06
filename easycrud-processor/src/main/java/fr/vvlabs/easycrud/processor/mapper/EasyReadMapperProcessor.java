@@ -8,16 +8,19 @@ import com.squareup.javapoet.TypeSpec.Builder;
 import fr.vvlabs.easycrud.core.mapper.BaseReadMapper;
 import fr.vvlabs.easycrud.core.mapper.EasyReadMapper;
 import fr.vvlabs.easycrud.processor.utils.AbstractEasyCrudProcessor;
-import java.io.IOException;
+
+import javax.annotation.processing.Processor;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
+import javax.tools.Diagnostic;
+import java.io.IOException;
 
 @SupportedAnnotationTypes(value = {"fr.vvlabs.easycrud.core.mapper.EasyReadMapper"})
-@SupportedSourceVersion(SourceVersion.RELEASE_11)
-@AutoService(EasyReadMapperProcessor.class)
+@SupportedSourceVersion(SourceVersion.RELEASE_21)
+@AutoService(Processor.class)
 public class EasyReadMapperProcessor extends AbstractEasyCrudProcessor<EasyReadMapper> {
 
   @Override
@@ -41,9 +44,12 @@ public class EasyReadMapperProcessor extends AbstractEasyCrudProcessor<EasyReadM
     try {
       javaFile.writeTo(processingEnv.getFiler());
     } catch (IOException e) {
-      e.printStackTrace();
-      return true;
+      processingEnv.getMessager().printMessage(
+          Diagnostic.Kind.ERROR,
+          "Failed to write generated mapper for " + element.getSimpleName() + ": " + e.getMessage(),
+          element);
+      return false;
     }
-    return false;
+    return true;
   }
 }

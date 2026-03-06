@@ -8,17 +8,18 @@ import com.squareup.javapoet.TypeSpec.Builder;
 import fr.vvlabs.easycrud.core.repository.BaseRepository;
 import fr.vvlabs.easycrud.core.repository.EasyRepository;
 import fr.vvlabs.easycrud.processor.utils.AbstractEasyCrudProcessor;
-import java.io.IOException;
+import javax.annotation.processing.Processor;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
-import org.springframework.stereotype.Repository;
+import javax.tools.Diagnostic;
+import java.io.IOException;
 
 @SupportedAnnotationTypes(value = {"fr.vvlabs.easycrud.core.repository.EasyRepository"})
-@SupportedSourceVersion(SourceVersion.RELEASE_11)
-@AutoService(EasyRepositoryProcessor.class)
+@SupportedSourceVersion(SourceVersion.RELEASE_21)
+@AutoService(Processor.class)
 public class EasyRepositoryProcessor extends AbstractEasyCrudProcessor<EasyRepository> {
 
   @Override
@@ -35,15 +36,18 @@ public class EasyRepositoryProcessor extends AbstractEasyCrudProcessor<EasyRepos
     // Generate "Ixxx extends BaseRepository<entity,id>
     Builder repositoryBuilder = interfaceBuilder(element)
         .addSuperinterface(repositoryType)
-        .addAnnotation(Repository.class);
+        .addAnnotation(ClassName.get("org.springframework.stereotype", "Repository"));
 
     JavaFile javaFile = JavaFile.builder(getPackagePath(element), repositoryBuilder.build()).build();
     try {
       javaFile.writeTo(processingEnv.getFiler());
     } catch (IOException e) {
-      e.printStackTrace();
-      return true;
+      processingEnv.getMessager().printMessage(
+          Diagnostic.Kind.ERROR,
+          "Failed to write generated repository for " + element.getSimpleName() + ": " + e.getMessage(),
+          element);
+      return false;
     }
-    return false;
+    return true;
   }
 }

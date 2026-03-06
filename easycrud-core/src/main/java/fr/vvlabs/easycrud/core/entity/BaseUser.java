@@ -1,11 +1,12 @@
 package fr.vvlabs.easycrud.core.entity;
 
+import jakarta.persistence.Transient;
+import org.springframework.util.CollectionUtils;
+
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Set;
-import javax.persistence.Transient;
-import org.springframework.util.CollectionUtils;
 
 public interface BaseUser extends Serializable {
 

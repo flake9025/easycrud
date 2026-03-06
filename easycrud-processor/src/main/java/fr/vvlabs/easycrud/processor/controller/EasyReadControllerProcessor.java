@@ -1,31 +1,28 @@
 package fr.vvlabs.easycrud.processor.controller;
 
 import com.google.auto.service.AutoService;
-import com.squareup.javapoet.ClassName;
-import com.squareup.javapoet.FieldSpec;
-import com.squareup.javapoet.JavaFile;
-import com.squareup.javapoet.MethodSpec;
-import com.squareup.javapoet.ParameterizedTypeName;
+import com.squareup.javapoet.*;
 import com.squareup.javapoet.TypeSpec.Builder;
 import fr.vvlabs.easycrud.core.controller.BaseReadController;
 import fr.vvlabs.easycrud.core.controller.EasyReadController;
 import fr.vvlabs.easycrud.core.service.BaseReadService;
 import fr.vvlabs.easycrud.processor.utils.AbstractEasyCrudProcessor;
-import java.io.IOException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.annotation.processing.Processor;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.RestController;
+import javax.tools.Diagnostic;
+import java.io.IOException;
 
 @SupportedAnnotationTypes({"fr.vvlabs.easycrud.core.controller.EasyReadController"})
-@SupportedSourceVersion(SourceVersion.RELEASE_11)
-@AutoService(EasyReadControllerProcessor.class)
+@SupportedSourceVersion(SourceVersion.RELEASE_21)
+@AutoService(Processor.class)
 public class EasyReadControllerProcessor extends AbstractEasyCrudProcessor<EasyReadController> {
 
   @Override
@@ -45,7 +42,7 @@ public class EasyReadControllerProcessor extends AbstractEasyCrudProcessor<EasyR
     );
     // add "@Autowired private BaseReadService<entity,id,user> readService"
     FieldSpec readServiceField = FieldSpec.builder(serviceType, "readService", Modifier.PRIVATE)
-        .addAnnotation(Autowired.class)
+        .addAnnotation(ClassName.get("org.springframework.beans.factory.annotation", "Autowired"))
         .build();
     // add "@Override public BaseReadService<entity,id,user> getReadService()"
     MethodSpec readServiceGetter = MethodSpec.methodBuilder("getReadService")
@@ -63,12 +60,16 @@ public class EasyReadControllerProcessor extends AbstractEasyCrudProcessor<EasyR
         ClassName.get(id),
         ClassName.get(user)
     );
+    ClassName implClassName = ClassName.get(getPackagePath(element), element.getSimpleName() + "Impl");
+    FieldSpec loggerField = FieldSpec.builder(ClassName.get(Logger.class), "log", Modifier.PRIVATE, Modifier.STATIC, Modifier.FINAL)
+        .initializer("$T.getLogger($T.class)", ClassName.get(LoggerFactory.class), implClassName)
+        .build();
     // Generate "xxxImpl implements BaseReadController<entity,dto,id,user>
     Builder controllerClassBuilder = implClassBuilder(element)
         .addSuperinterface(controllerType)
-        .addAnnotation(RestController.class)
-        .addAnnotation(Validated.class)
-        .addAnnotation(Slf4j.class)
+        .addAnnotation(ClassName.get("org.springframework.web.bind.annotation", "RestController"))
+        .addAnnotation(ClassName.get("org.springframework.validation.annotation", "Validated"))
+        .addField(loggerField)
         .addField(readServiceField)
         .addMethod(readServiceGetter);
 
@@ -76,9 +77,12 @@ public class EasyReadControllerProcessor extends AbstractEasyCrudProcessor<EasyR
     try {
       javaFile.writeTo(processingEnv.getFiler());
     } catch (IOException e) {
-      e.printStackTrace();
-      return true;
+      processingEnv.getMessager().printMessage(
+          Diagnostic.Kind.ERROR,
+          "Failed to write generated controller for " + element.getSimpleName() + ": " + e.getMessage(),
+          element);
+      return false;
     }
-    return false;
+    return true;
   }
 }

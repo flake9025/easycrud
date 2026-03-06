@@ -1,9 +1,10 @@
 package fr.vvlabs.easycrud.test.model;
 
 import fr.vvlabs.easycrud.core.entity.BaseUser;
+import fr.vvlabs.easycrud.core.entity.EasyEntity;
 import java.util.Set;
 
-public class User implements BaseUser {
+public class User implements BaseUser, EasyEntity {
 
   private String username;
   private String password;

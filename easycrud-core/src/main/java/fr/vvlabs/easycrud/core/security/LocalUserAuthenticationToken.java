@@ -1,10 +1,11 @@
 package fr.vvlabs.easycrud.core.security;
 
 import fr.vvlabs.easycrud.core.entity.BaseUser;
-import java.util.Set;
-import java.util.stream.Collectors;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class LocalUserAuthenticationToken<USER extends BaseUser> extends UsernamePasswordAuthenticationToken {
 
